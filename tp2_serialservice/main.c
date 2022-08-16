@@ -117,8 +117,12 @@ static void signal_handler(int signal) {
         uart_on_destroy();
         printf("UART closed...\r\n");
         
-        // TCP is blocked in reading socket. That means that waiting for join
-        // could take a long time until client sends something on tcp socket.
+        if (pthread_cancel(tcp_thread) != 0) {
+            perror("Error canceling tcp_thread...");
+            exit(-1);
+        };
+
+        pthread_join(tcp_thread, NULL);
         pthread_join(uart_thread, NULL);
         exit(0);
     }

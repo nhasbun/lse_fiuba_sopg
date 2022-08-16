@@ -19,8 +19,9 @@ static struct sockaddr_in clientaddr;
 static struct sockaddr_in serveraddr;
 static char buffer[128];
 /* client link socket defaults to stdout before assignment */
-static int link_socket_fd = STDOUT_FILENO;
+static int link_socket_fd = -1;
 static int socket_fd;
+extern pthread_mutex_t lock;
 
 // File scope fn declaration
 static void socket_init();
@@ -45,13 +46,16 @@ void * tcp_task(void * args) {
     // socket accept connection loop
     while(1)
     {
-        // accept()
-        addr_len = sizeof(struct sockaddr_in);
-        if ( (link_socket_fd = accept(socket_fd, (struct sockaddr *)&clientaddr,&addr_len)) == -1)
-            {
-            perror("error en accept");
-            exit(1);
+        pthread_mutex_lock(&lock); {
+            // accept()
+            addr_len = sizeof(struct sockaddr_in);
+            if ( (link_socket_fd = accept(socket_fd, (struct sockaddr *)&clientaddr,&addr_len)) == -1)
+                {
+                perror("error en accept");
+                exit(1);
+            }
         }
+        pthread_mutex_unlock(&lock);
         
         // Extract client address
         char ipClient[32];
@@ -74,7 +78,12 @@ void * tcp_task(void * args) {
             }
         }
 
-        printf("Client connection lost...\r\n");
+        pthread_mutex_lock(&lock); {
+            printf("Client connection lost...\r\n");
+            close(link_socket_fd);
+            link_socket_fd = -1;
+        }
+        pthread_mutex_unlock(&lock);
     }
 }
 
@@ -88,7 +97,7 @@ int get_link_socket() {
 }
 
 void tcp_on_destroy() {
-    if (link_socket_fd != STDOUT_FILENO)
+    if (link_socket_fd != -1)
         close(link_socket_fd);
     
     close(socket_fd);

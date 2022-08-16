@@ -13,6 +13,7 @@
 
 
 pthread_t tcp_thread, uart_thread;
+pthread_mutex_t lock;
 
 
 static void block_sign();
@@ -38,6 +39,13 @@ static void signal_handler(int signal);
 int main(void) {
     
     printf("Inicio Serial Service\r\n");
+
+    // Configuring Mutex
+    if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        perror("Mutex init failed...");
+        exit(-1);
+    }
 
     // Configure signal handling for process
     configure_signals();
@@ -116,7 +124,7 @@ static void signal_handler(int signal) {
         printf("TCP closed...\r\n");
         uart_on_destroy();
         printf("UART closed...\r\n");
-        
+
         if (pthread_cancel(tcp_thread) != 0) {
             perror("Error canceling tcp_thread...");
             exit(-1);
@@ -124,6 +132,7 @@ static void signal_handler(int signal) {
 
         pthread_join(tcp_thread, NULL);
         pthread_join(uart_thread, NULL);
+        pthread_mutex_destroy(&lock);
         exit(0);
     }
 }

@@ -61,7 +61,10 @@ int main(void)
 	while (1)
 	{
         /* Get some text from console */
-		fgets(outputBuffer, BUFFER_SIZE, stdin);
+		if (fgets(outputBuffer, BUFFER_SIZE, stdin) == NULL) {
+            perror("Error reading from console...");
+            continue;
+        }
 
         // Adding «DATA:» prefix
         sprintf(outputBuffer2, "DATA:%s", outputBuffer);
@@ -106,12 +109,17 @@ void fifo_write(char * output_str) {
         // Write buffer to named fifo.
 		if ((bytesWrote = write(fd, output_str, strlen(output_str) - 1)) == -1)
         {
-			perror("write");
+			perror("Error writing to named fifo...");
         }
         else
         {
             char msg[32] = "";
-            sprintf(msg, "writer: wrote %d bytes\n", bytesWrote);
-			write(STDOUT_FILENO, msg, strlen(msg));
+            
+            if (sprintf(msg, "writer: wrote %d bytes\n", bytesWrote) == -1) {
+                perror("Error using sprintf...");
+            
+            } else if (write(STDOUT_FILENO, msg, strlen(msg)) == -1) {
+                perror("Error writing to stdout...");
+            }
         }
 }

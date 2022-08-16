@@ -62,16 +62,36 @@ int main(void)
 			printf("reader: read %d bytes: \"%s\"\n", bytesRead, inputBuffer);
 
             if (strncmp(data_prefix, inputBuffer, 4) == 0) {
-                fprintf(log_file, "%s\r\n", inputBuffer + 5);
-                fflush(log_file);
+                
+                if (fprintf(log_file, "%s\r\n", inputBuffer + 5) == -1) {
+                    perror("Error writing to log file...");
+                
+                } else if (fflush(log_file) != 0) {
+                    perror("Error emptying log file buffer...");
+                }
             }
 
             if (strncmp(signal_prefix, inputBuffer, 4) == 0) {
-                fprintf(sign_file, "%s\r\n", inputBuffer + 5);
-                fflush(sign_file);
+                
+                if (fprintf(sign_file, "%s\r\n", inputBuffer + 5) == -1) {
+                    perror("Error writing to sign file...");
+                
+                } else if (fflush(sign_file) != 0) {
+                    perror("Error emptying sign file buffer...");
+                }
             }
 		}
     }
+
+    if (fclose(log_file) != 0) {
+        perror("Error closing log file...");
+        exit(-1);
+    }
+
+    if (fclose(sign_file) != 0) {
+        perror("Error closing sign file...");
+        exit(-1);
+    };
 
 	return 0;
 }

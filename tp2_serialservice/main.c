@@ -49,8 +49,15 @@ int main(void) {
     block_sign();
 
     // Launching threads
-    pthread_create (&tcp_thread, NULL, tcp_task, NULL);
-    pthread_create (&uart_thread, NULL, uart_task, NULL);
+    if (pthread_create (&tcp_thread, NULL, tcp_task, NULL) != 0) {
+        perror("Error creating tcp_thread...");
+        exit(-1);
+    };
+    
+    if (pthread_create (&uart_thread, NULL, uart_task, NULL) != 0) {
+        perror("Error creating uart_thread...");
+        exit(-1);
+    };
 
     // Unblocking signals
     unblock_sign();
@@ -90,8 +97,15 @@ static void configure_signals() {
 	sa.sa_flags = 0; //SA_RESTART;
 	sigemptyset(&sa.sa_mask);
 
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
+	if (sigaction(SIGINT, &sa, NULL) != 0) {
+        perror("Error registering SIGINT...");
+        exit(-1);
+    }
+	
+    if (sigaction(SIGTERM, &sa, NULL) != 0) {
+        perror("Error registering SIGTERM...");
+        exit(-1);
+    }
 }
 
 static void signal_handler(int signal) {
